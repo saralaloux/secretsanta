@@ -14,7 +14,9 @@ function computeDraw(){
   const ids=D.members.map(m=>m.id);
   for(let t=0;t<5000;t++){const p=ids.slice();
     for(let i=p.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[p[i],p[j]]=[p[j],p[i]]}
-    if(ids.every((a,i)=>!banned(a,p[i]))){const m={};ids.forEach((a,i)=>m[a]=p[i]);return m}}
+    if(ids.every((a,i)=>!banned(a,p[i]))){const m={};ids.forEach((a,i)=>m[a]=p[i]);
+      // pas d'échange en duo (A offre à B et B offre à A), sauf s'il n'y a que 2 personnes
+      if(ids.length<3||ids.every(x=>m[m[x]]!==x))return m}}
   return null;
 }
 
@@ -25,7 +27,7 @@ const enc=o=>{const b=new TextEncoder().encode(JSON.stringify(o)).map((c,i)=>c^S
 const dec=s=>{try{const bin=atob(s.replace(/-/g,'+').replace(/_/g,'/'));
   const b=Uint8Array.from(bin,(c,i)=>c.charCodeAt(0)^SALT.charCodeAt(i%SALT.length));return JSON.parse(new TextDecoder().decode(b))}catch(e){return null}};
 const BASE=location.origin+location.pathname.replace(/[^/]*$/,''); // dossier du site, la page participant est index.html
-const codeFor=m=>enc({g:m.name,r:mem(D.draw[m.id]).name,d:D.date});
+const codeFor=m=>enc({g:m.name,r:mem(D.draw[m.id]).name,d:D.date,n:D.members.map(x=>x.name)}); // n : les prénoms pour l'animation
 const linkFor=m=>BASE+'#r='+codeFor(m);
 
 /* ===== 4. INTERFACE ===== */
@@ -130,7 +132,7 @@ $app.addEventListener('click',e=>{
     else (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Message copié, colle-le dans ta messagerie'),()=>toast('Partage impossible ici'));return}
   else if(a==='see'){S.pv=codeFor(mem(id));S.open=false}
   else if(a==='back'){S.pv=null;S.open=false}
-  else if(a==='reveal'){const p=current();const others=D.members.map(m=>m.name).filter(n=>n!==p.g);
+  else if(a==='reveal'){const p=current();const others=(p.n||D.members.map(m=>m.name)).filter(n=>n!==p.g);
     if(reduced||!others.length){S.open=true}else{animate(others,1600,()=>{S.open=true;render()});return}}
   render();
 });
